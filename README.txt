@@ -1,0 +1,1 @@
+This is a simple HTML5 browser Role-Playing Game created using the Phaser framework. I created it as part of a ZENVA academy course.
