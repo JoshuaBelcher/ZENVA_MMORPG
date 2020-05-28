@@ -5,6 +5,7 @@ class GameManager {
 
         this.spawners = {};
         this.chests = {};
+        this.monsters = {};
 
         this.playerLocations = [];
         this.chestLocations = {};
@@ -22,24 +23,24 @@ class GameManager {
         this.mapData.forEach ((layer) => {
             if (layer.name === 'player_locations') {
                 layer.objects.forEach ((obj) => {
-                    this.playerLocations.push ([obj.x, obj.y]);
+                    this.playerLocations.push ([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]); // corrected for discrepancy between Tiled and Phaser anchor points
                 });
             } else if (layer.name === 'chest_locations') {
                 layer.objects.forEach ((obj) => {
                     var spawner = getTiledProperty(obj, 'spawner');
                     if (this.chestLocations[spawner]) {
-                        this.chestLocations[spawner].push([obj.x, obj.y]);
+                        this.chestLocations[spawner].push([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]);
                     } else {
-                        this.chestLocations[spawner] = [[obj.x, obj.y]];
+                        this.chestLocations[spawner] = [[obj.x + (obj.width / 2), obj.y - (obj.height / 2)]];
                     }
                 });
             } else if (layer.name === 'monster_locations') {
                 layer.objects.forEach ((obj) => {
                     var spawner = getTiledProperty(obj, 'spawner');
                     if (this.monsterLocations[spawner]) {
-                        this.monsterLocations[spawner].push([obj.x, obj.y]);
+                        this.monsterLocations[spawner].push([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]);
                     } else {
-                        this.monsterLocations[spawner] = [[obj.x, obj.y]];
+                        this.monsterLocations[spawner] = [[obj.x + (obj.width / 2), obj.y - (obj.height / 2)]];
                     }
                 });
             }
@@ -53,26 +54,50 @@ class GameManager {
                 this.spawners[this.chests[chestId].spawnerId].removeObject(chestId);
             }
         });
+    
+        this.scene.events.on('destroyEnemy', (monsterId) => {
+            // update the spawner
+            if (this.monsters[monsterId]) {
+                this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId);
+            }
+        });
     };
 
     setupSpawners() {
+        // config properties that are shared between spawner types (CHEST changed to MONSTER if needed)
+        const config = {
+            spawnInterval: 3000,
+            limit: 3,
+            spawnerType: SpawnerType.CHEST,
+            id: ''
+        };
+        let spawner;
+
         // create chest spawners
         Object.keys(this.chestLocations).forEach((key) => {
-            const config = {
-                spawnInterval: 3000,
-                limit: 3,
-                spawnerType: SpawnerType.CHEST,
-                id: `chest-${key}`
-            };
+            config.id = `chest-${key}`;
 
-            const spawner = new Spawner(
+            spawner = new Spawner(
                 config,
                 this.chestLocations[key],
                 this.addChest.bind(this),
                 this.deleteChest.bind(this)
             );
             this.spawners[spawner.id] = spawner;
+        });
 
+        // create monster spawners
+        Object.keys(this.monsterLocations).forEach((key) => {
+            config.id = `monster-${key}`;
+            config.spawnerType = SpawnerType.MONSTER;
+
+            spawner = new Spawner(
+                config,
+                this.monsterLocations[key],
+                this.addMonster.bind(this),
+                this.deleteMonster.bind(this)
+            );
+            this.spawners[spawner.id] = spawner;
         });
     };
 
@@ -88,5 +113,14 @@ class GameManager {
 
     deleteChest(chestId) {
         delete this.chests[chestId];
+    }
+
+    addMonster(monsterId, monster) {
+        this.monsters[monsterId] = monster;
+        this.scene.events.emit('monsterSpawned', monster);
+    }
+
+    deleteMonster(monsterId) {
+        delete this.monsters[monsterId];
     }
 };
