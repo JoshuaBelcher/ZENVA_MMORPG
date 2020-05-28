@@ -14,55 +14,47 @@ class GameScene extends Phaser.Scene{
 
         this.createAudio();
     
-        this.createChests();
-    
-        this.createPlayer();
-    
-        this.addCollisions();
+        this.createGroups();
     
         this.createInput();
+
+        this.createGameManager();
 
     }
 
     update() {
-        this.player.update(this.cursors);
+        if (this.player) {
+            this.player.update(this.cursors)
+        };
     }
 
     createAudio() {
         this.goldPickupAudio = this.sound.add('goldSound', {loop: false});
     }
 
-    createPlayer() {
-        this.player = new Player(this, 32, 32, 'characters', 0)
+    createPlayer(location) {
+        this.player = new Player(this, location[0] * 2, location[1] * 2, 'characters', 0)
     }
 
-    createChests() {
+    createGroups() {
         // create a chests group
         this.chests = this.physics.add.group();
-        // create chest positions array
-        this.chestPositions = [[100, 100], [200, 200], [300, 300], [400, 400], [500, 500]]
-        // specify the max number of chests we can have
-        this.maxNumberOfChests = 3;
-        // spawn a chest
-        for (let i = 0; i < this.maxNumberOfChests; i += 1) {
-            this.spawnChest();
-        }
+
     }
 
-    spawnChest() {
-        // generate random location selected from those stored in the array
-        const location = this.chestPositions[Math.floor(Math.random() * this.chestPositions.length)];
-        
-        // game will first tyr to set the newly spawned chest to be the first one in the chests array that was rendered inactive by player pickup
+    spawnChest(chestObject) {        
+        // game will first try to set the newly spawned chest to be the first one in the chests array that was rendered inactive by player pickup
         let chest = this.chests.getFirstDead();
         
         // if no inactive chests exist in the chests array, a new chest will be generated. If an old one is reused, its position is updated to the new random location.
         if (!chest) {
-            const chest = new Chest(this, location[0], location[1], 'items', 0);
+            const chest = new Chest(this, chestObject.x * 2, chestObject.y * 2, 'items', 0, chestObject.gold, chestObject.id);
             // add chest to chests group
             this.chests.add(chest);
         } else {
-            chest.setPosition(location[0], location[1]);
+            chest.coins = chestObject.gold;
+            chest.id = chestObject.id;
+            chest.setPosition(chestObject.x * 2, chestObject.y * 2);
             chest.makeActive();
         }
 
@@ -73,7 +65,9 @@ class GameScene extends Phaser.Scene{
     }
 
     addCollisions() {
-        this.physics.add.collider(this.player, this.wall);
+        // checks for collisions between the player and the tiled blocked layer
+        this.physics.add.collider(this.player, this.map.blockedLayer);
+        // checks for overlaps between the player and the chest game objects
         this.physics.add.overlap(this.player, this.chests, this.collectChest, null, this);
     }
 
@@ -86,20 +80,25 @@ class GameScene extends Phaser.Scene{
         this.events.emit('updateScore', this.score);
         // make chest game object inactive
         chest.makeInactive();
-        // spawn a new chest
-        this.time.delayedCall(1000, this.spawnChest, [], this);
-    }
+        // send alert that chest has been picked up so it can be deleted by the Game Manager
+        this.events.emit('pickUpChest', chest.id);
+    }   
 
     createMap() {
-        // create the tile map
-        this.map = this.make.tilemap({ key: 'map'});
-        // add the tileset image to our map
-        this.tiles = this.map.addTilesetImage('background', 'background', 32, 32, 1, 2);
-        //create our background
-        this.backgroundLayer = this.map.createStaticLayer('background', this.tiles, 0, 0);
-        this.backgroundLayer.setScale(2);
-        // create blocked layer
-        this.blockedLayer = this.map.createStaticLayer('blocked', this.tiles, 0, 0);
-        this.blockedLayer.setScale(2);
+        this.map = new Map (this, 'map', 'background', 'background', 'blocked');
+    }
+
+    createGameManager() {
+        this.events.on('spawnPlayer', (location) => {
+            this.createPlayer(location);
+            this.addCollisions();
+        });
+
+        this.events.on('chestSpawned', (chest) => {
+            this.spawnChest(chest);
+        });
+
+        this.gameManager = new GameManager (this, this.map.map.objects);
+        this.gameManager.setup();
     }
 }
