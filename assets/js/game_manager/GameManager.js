@@ -6,6 +6,7 @@ class GameManager {
         this.spawners = {};
         this.chests = {};
         this.monsters = {};
+        this.players = {};
 
         this.playerLocations = [];
         this.chestLocations = {};
@@ -48,17 +49,46 @@ class GameManager {
     }
 
     setupEventListener() {
-        this.scene.events.on('pickUpChest', (chestId) => {
+        this.scene.events.on('pickUpChest', (chestId, playerId) => {
             // update the spawner
             if (this.chests[chestId]) {
+                const { gold } = this.chests[chestId];
+
+                // updating the player's gold
+                this.players[playerId].updateGold(gold);
+                this.scene.events.emit('updateScore', this.players[playerId].gold);
+
+                // removing the chest
                 this.spawners[this.chests[chestId].spawnerId].removeObject(chestId);
+                this.scene.events.emit('chestRemoved', chestId);
             }
         });
     
-        this.scene.events.on('destroyEnemy', (monsterId) => {
+        this.scene.events.on('monsterAttacked', (monsterId, playerId) => {
             // update the spawner
             if (this.monsters[monsterId]) {
-                this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId);
+                const { gold, attack } = this.monsters[monsterId];
+
+                // subtract health from monster model
+                this.monsters[monsterId].loseHealth();
+
+                // check the monster's health and if dead, remove that object
+                if (this.monsters[monsterId].health <= 0) {
+                     // updating the player's gold
+                    this.players[playerId].updateGold(gold);
+                    this.scene.events.emit('updateScore', this.players[playerId].gold);
+
+                    // removing the monster
+                    this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId);
+                    this.scene.events.emit('monsterRemoved', monsterId);
+                } else {
+                    // update the player's health
+                    this.players[playerId].updateHealth(-attack);
+                    this.scene.events.emit('updatePlayerHealth', playerId, this.players[playerId].health);
+
+                    // update the monster's health
+                    this.scene.events.emit('updateMonsterHealth', monsterId, this.monsters[monsterId].health);
+                }
             }
         });
     };
@@ -102,8 +132,9 @@ class GameManager {
     };
 
     spawnPlayer() {
-        const location = this.playerLocations[Math.floor(Math.random() * this.playerLocations.length)];
-        this.scene.events.emit('spawnPlayer', location);
+        const player = new PlayerModel(this.playerLocations);
+        this.players[player.id] = player;
+        this.scene.events.emit('spawnPlayer', player);
     };
 
     addChest(chestId ,chest) {
