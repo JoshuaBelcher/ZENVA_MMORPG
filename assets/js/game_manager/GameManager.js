@@ -81,6 +81,10 @@ class GameManager {
                     // removing the monster
                     this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId);
                     this.scene.events.emit('monsterRemoved', monsterId);
+
+                    // add bonus health to the player
+                    this.players[playerId].updateHealth(2);
+                    this.scene.events.emit('updatePlayerHealth', playerId, this.players[playerId].health);
                 } else {
                     // update the player's health
                     this.players[playerId].updateHealth(-attack);
@@ -88,6 +92,18 @@ class GameManager {
 
                     // update the monster's health
                     this.scene.events.emit('updateMonsterHealth', monsterId, this.monsters[monsterId].health);
+
+                    // check the player's health, if below 0 have the player respawn
+                    if (this.players[playerId].health <= 0) {
+                        // update the gold the player has by losing half
+                        this.players[playerId].updateGold(parseInt(-this.players[playerId].gold / 2, 10));
+                        this.scene.events.emit('updateScore', this.players[playerId].gold);
+
+                        // respawn the player
+                        this.players[playerId].respawn();
+                        this.scene.events.emit('respawnPlayer', this.players[playerId]);
+
+                    }
                 }
             }
         });
@@ -125,7 +141,8 @@ class GameManager {
                 config,
                 this.monsterLocations[key],
                 this.addMonster.bind(this),
-                this.deleteMonster.bind(this)
+                this.deleteMonster.bind(this),
+                this.moveMonsters.bind(this),
             );
             this.spawners[spawner.id] = spawner;
         });
@@ -153,5 +170,9 @@ class GameManager {
 
     deleteMonster(monsterId) {
         delete this.monsters[monsterId];
+    }
+
+    moveMonsters() {
+        this.scene.events.emit('monsterMovement', this.monsters);
     }
 };

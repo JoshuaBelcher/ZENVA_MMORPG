@@ -28,7 +28,11 @@ class GameScene extends Phaser.Scene{
     }
 
     createAudio() {
-        this.goldPickupAudio = this.sound.add('goldSound', {loop: false});
+        this.goldPickupAudio = this.sound.add('goldSound', {loop: false, volume: 0.3});
+        this.playerAttackAudio = this.sound.add('playerAttack', {loop: false, volume: 0.01});
+        this.playerDamageAudio = this.sound.add('playerDamage', {loop: false, volume: 0.2});
+        this.playerDeathAudio = this.sound.add('playerDeath', {loop: false, volume: 0.2});
+        this.monsterDeathAudio = this.sound.add('enemyDeath', {loop: false, volume: 0.2});
     }
 
     createPlayer(playerObject) {
@@ -41,6 +45,7 @@ class GameScene extends Phaser.Scene{
             playerObject.health,
             playerObject.maxHealth,
             playerObject.id,
+            this.playerAttackAudio,
 
         )
     }
@@ -50,7 +55,8 @@ class GameScene extends Phaser.Scene{
         this.chests = this.physics.add.group();
 
         // create a monsters group
-        this.monsters = this.physics.add.group();    
+        this.monsters = this.physics.add.group();
+        this.monsters.runChildUpdate = true; 
 
     }
 
@@ -80,8 +86,8 @@ class GameScene extends Phaser.Scene{
         if (!monster) {
             monster = new Monster(
                 this,
-                monsterObject.x * 2,
-                monsterObject.y * 2,
+                monsterObject.x,
+                monsterObject.y,
                 'monsters',
                 monsterObject.frame,
                 monsterObject.id,
@@ -95,7 +101,7 @@ class GameScene extends Phaser.Scene{
             monster.health = monsterObject.health;
             monster.maxHealth = monsterObject.maxHealth;
             monster.setTexture('monsters', monsterObject.frame);
-            monster.setPosition(monsterObject.x * 2, monsterObject.y * 2);
+            monster.setPosition(monsterObject.x, monsterObject.y);
             monster.makeActive();
         }
     }
@@ -160,6 +166,7 @@ class GameScene extends Phaser.Scene{
             this.monsters.getChildren().forEach((monster) => {
                 if (monster.id === monsterId) {
                     monster.makeInactive();
+                    this.monsterDeathAudio.play();
                 }
             });
         });
@@ -172,11 +179,27 @@ class GameScene extends Phaser.Scene{
             });
         });
 
+        this.events.on('monsterMovement', (monsters) => {
+            this.monsters.getChildren().forEach((monster) => {
+                Object.keys(monsters).forEach((monsterId) => {
+                    if (monster.id === monsterId) {
+                        this.physics.moveToObject(monster, monsters[monsterId], 40);
+                    }
+                });
+            });
+        });
+
         this.events.on('updatePlayerHealth', (playerId, health) => {
+            if (health < this.player.health) {
+                this.playerDamageAudio.play();
+            }
             this.player.updateHealth(health);
         });
 
-        
+        this.events.on('respawnPlayer', (playerObject) => {
+            this.playerDeathAudio.play();
+            this.player.respawn(playerObject);
+        });
 
         this.gameManager = new GameManager (this, this.map.map.objects);
         this.gameManager.setup();
