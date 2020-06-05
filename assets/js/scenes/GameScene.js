@@ -1,14 +1,19 @@
+// after loading assets, boot scene finishes by starting this scene, our main game scene, 
+//at least for this given "level," "stage," "zone," etc.
 class GameScene extends Phaser.Scene{
     constructor() {
         super('Game');
     }
 
     init () {
-        // starts scene alongside existing scene, as opposed to "start" method which shuts down existing first
+        // "launch" starts scene alongside existing scene, as opposed to "start" method which shuts down existing scene first
+        // ensures our Ui scene runs in parallel with our Game scene since both need to be viewed by player at all times
         this.scene.launch('Ui');
     }
 
+    // automatically called after scene start and init() and preload()-N/A here-, which generates the game scenes essential processes
     create() {
+        // map rendered first in order so that player/monsters/chests, etc. won't be hidden behind it
         this.createMap();
 
         this.createAudio();
@@ -21,12 +26,15 @@ class GameScene extends Phaser.Scene{
 
     }
 
+    // automatically called once per game step to update the player container's position based on keyboard input--only if player already exists in scene
     update() {
         if (this.player) {
             this.player.update(this.cursors)
         };
     }
 
+    // takes the sounds assets that were preloaded in the boot scene then adds them, by '' key name, into this scene's sound manager
+    // uses config object parameter to determine if sound is looped and volume level
     createAudio() {
         this.goldPickupAudio = this.sound.add('goldSound', {loop: false, volume: 0.3});
         this.playerAttackAudio = this.sound.add('playerAttack', {loop: false, volume: 0.01});
@@ -35,6 +43,7 @@ class GameScene extends Phaser.Scene{
         this.monsterDeathAudio = this.sound.add('enemyDeath', {loop: false, volume: 0.2});
     }
 
+    // generates an instance of the Player Container class in our scene--"PlayerModel" will be the class passed in as argument
     createPlayer(playerObject) {
         this.player = new PlayerContainer(
             this,
@@ -50,13 +59,14 @@ class GameScene extends Phaser.Scene{
         )
     }
 
+    // creates arcade physics game objects groups to house chests and monsters
     createGroups() {
         // create a chests group
         this.chests = this.physics.add.group();
 
         // create a monsters group
         this.monsters = this.physics.add.group();
-        this.monsters.runChildUpdate = true; 
+        this.monsters.runChildUpdate = true; // will ensure update() method of monsters group objects is called
 
     }
 
@@ -136,6 +146,7 @@ class GameScene extends Phaser.Scene{
         this.events.emit('pickUpChest', chest.id, player.id);
     }   
 
+    // generate a new instance of Map class for this scene
     createMap() {
         this.map = new Map (this, 'map', 'background', 'background', 'blocked');
     }
@@ -146,6 +157,7 @@ class GameScene extends Phaser.Scene{
             this.addCollisions();
         });
 
+        // hears when a chest model is spawned by the game manager, upon which it adds a new Chest class physics object to the scene
         this.events.on('chestSpawned', (chest) => {
             this.spawnChest(chest);
         });
@@ -201,6 +213,8 @@ class GameScene extends Phaser.Scene{
             this.player.respawn(playerObject);
         });
 
+        // creates a new game manager object by passing in the current scene and the array of tilemap object layers
+        // contained in the map object created above
         this.gameManager = new GameManager (this, this.map.map.objects);
         this.gameManager.setup();
     }

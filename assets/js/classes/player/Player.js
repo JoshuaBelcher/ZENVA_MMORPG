@@ -3,7 +3,7 @@ class Player extends Phaser.Physics.Arcade.Image {
         super(scene, x, y, key, frame);
         this.scene = scene; // the scene this container will be added to
 
-        //enable physics
+        //enable physics by creating a physics body for the parameter--in this case the Player class instance
         this.scene.physics.world.enable(this);
         //set immovable if another object collides with our player
         this.setImmovable(true);

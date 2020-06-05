@@ -1,8 +1,13 @@
+// this first scene is run automatically by the Phaser.Game object when it is created--will call init(), preload(), and create() in that order--
+// we can define in our class what these methods will actually do
 class BootScene extends Phaser.Scene{
+    // constructor function is the method called when creating a new instance of the class--in this case, it will
+    // use "super" to employ the constructor function defined in the parent Phaser.Scene class that the BootScene is derived from
     constructor() {
-        super('Boot');
+        super('Boot'); // "Boot" is the key that will be used to reference the scene constructed by this function
     }
 
+    // loader plugin is used to load game assets
     preload(){
         // load images
         this.loadImages();
@@ -17,7 +22,7 @@ class BootScene extends Phaser.Scene{
     loadImages() {
         this.load.image('button1', 'assets/images/ui/blue_button01.png');
         this.load.image('button2', 'assets/images/ui/blue_button02.png');
-        // load the map tileset image
+        // load the tileset image that was used to create the tilemap that will be loaded shortly
         this.load.image('background', 'assets/level/background-extruded.png');
     }
 
@@ -41,6 +46,7 @@ class BootScene extends Phaser.Scene{
         this.load.tilemapTiledJSON('map', 'assets/level/large_level.json');
     }
 
+    // after loading is complete, this is called to close our boot scene then start our main game scene
     create() {
         this.scene.start('Game');
     }

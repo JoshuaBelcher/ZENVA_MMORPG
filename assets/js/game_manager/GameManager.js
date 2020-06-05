@@ -1,18 +1,21 @@
 class GameManager {
     constructor (scene, mapData) {
-        this.scene = scene;
-        this.mapData = mapData;
+        this.scene = scene; // the scene the game manager object is located in
+        this.mapData = mapData; // the array of layers that has the game's map data needed for this class
 
+        // these properties keep track of existing objects as they are created
         this.spawners = {};
         this.chests = {};
         this.monsters = {};
         this.players = {};
 
+        // hold spawning location data pulled from the Tiled map's object layer
         this.playerLocations = [];
         this.chestLocations = {};
         this.monsterLocations = {};
     }
 
+    // calls batch of methods defined below in order to get the game manager object performing its purpose
     setup() {
         this.parseMapData();
         this.setupEventListener();
@@ -20,15 +23,20 @@ class GameManager {
         this.spawnPlayer();
     }
 
+    // pulls map data from the passed map object which it uses to populate the container properties above--getTiledProperty is defined in "utils.js"
     parseMapData() {
         this.mapData.forEach ((layer) => {
+            // loop selection tree cycles through and chooses the different layers of the map
             if (layer.name === 'player_locations') {
+                // player spawn locations pushed to storing array
                 layer.objects.forEach ((obj) => {
                     this.playerLocations.push ([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]); // corrected for discrepancy between Tiled and Phaser anchor points
                 });
             } else if (layer.name === 'chest_locations') {
                 layer.objects.forEach ((obj) => {
                     var spawner = getTiledProperty(obj, 'spawner');
+                    // these locations are stored in an object so that each key of the object can be mapped to a particular
+                    // spawner ID, allowing the code to track all possible locations associated with it
                     if (this.chestLocations[spawner]) {
                         this.chestLocations[spawner].push([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]);
                     } else {
@@ -38,6 +46,8 @@ class GameManager {
             } else if (layer.name === 'monster_locations') {
                 layer.objects.forEach ((obj) => {
                     var spawner = getTiledProperty(obj, 'spawner');
+                    // these locations are stored in an object so that each key of the object can be mapped to a particular
+                    // spawner ID, allowing the code to track all possible locations associated with it
                     if (this.monsterLocations[spawner]) {
                         this.monsterLocations[spawner].push([obj.x + (obj.width / 2), obj.y - (obj.height / 2)]);
                     } else {
@@ -46,6 +56,7 @@ class GameManager {
                 });
             }
         });
+        console.log(this.chestLocations);
     }
 
     setupEventListener() {
@@ -110,7 +121,7 @@ class GameManager {
     };
 
     setupSpawners() {
-        // config properties that are shared between spawner types (CHEST changed to MONSTER if needed)
+        // config properties that are shared between spawner types (default CHEST will be changed to MONSTER if needed)
         const config = {
             spawnInterval: 3000,
             limit: 3,
@@ -119,7 +130,10 @@ class GameManager {
         };
         let spawner;
 
-        // create chest spawners
+        // create chest spawners for each spawner location that was originally obtained from the map data.
+        // Each keyed spawner is added to the game manager's spawners array.
+        // "Object.keys" creates an array which consists of every key in the passed object. You can then use "forEach"
+        // to iterate through every key in the array
         Object.keys(this.chestLocations).forEach((key) => {
             config.id = `chest-${key}`;
 
@@ -132,7 +146,8 @@ class GameManager {
             this.spawners[spawner.id] = spawner;
         });
 
-        // create monster spawners
+        // create monster spawners for each spawner location that was originally obtained from the map data.
+        // Each keyed spawner is added to the game manager's spawners array.
         Object.keys(this.monsterLocations).forEach((key) => {
             config.id = `monster-${key}`;
             config.spawnerType = SpawnerType.MONSTER;
@@ -149,12 +164,17 @@ class GameManager {
     };
 
     spawnPlayer() {
+        // creates new instance of the PlayerModel class, passing in the array of possible spawn locations
         const player = new PlayerModel(this.playerLocations);
+        // stores the new player into the players object array, keyed to the UUID stored in the player
         this.players[player.id] = player;
+        // emits an event that will be picked up by the scene that was passed into the game manager,
+        // along with the player object to be received by the event listener
         this.scene.events.emit('spawnPlayer', player);
     };
 
-    addChest(chestId ,chest) {
+    // stores the new chest model in the game manager's chests array, then emits an event heard by the game scene
+    addChest(chestId, chest) {
         this.chests[chestId] = chest;
         this.scene.events.emit('chestSpawned', chest);
     }

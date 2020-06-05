@@ -1,3 +1,5 @@
+// this class handles all of the properties and methods needed for generating a scene map, reducing scene code clutter
+// and allowing for easy reuse in multiple scenes
 class Map {
     constructor(scene, key, tileSetName, bgLayerName, blockedLayerName) {
         this.scene = scene; // the scene this map belongs to
@@ -23,6 +25,7 @@ class Map {
         // create blocked layer
         this.blockedLayer = this.map.createStaticLayer(this.blockedLayerName, this.tiles, 0, 0);
         this.blockedLayer.setScale(2);
+        // array value of "-1" means all tiles in the layer will be checked for collisions
         this.blockedLayer.setCollisionByExclusion([-1]);
 
         // update the world bounds (*2 because layers were scaled up by a factor of 2--see above)
