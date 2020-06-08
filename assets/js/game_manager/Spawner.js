@@ -67,7 +67,7 @@ class Spawner {
         this.addObject(monster.id, monster);
     }
 
-    // randomly picks one of the spawner's stored possible locations, but it cannot pick a location identical to one already held by an "objectsCreated" object
+    // randomly picks one of the spawner's stored possible locations by random index number, but it cannot pick a location identical to one already held by an "objectsCreated" object
     pickRandomLocation() {
         const location = this.spawnLocations[Math.floor(Math.random() * this.spawnLocations.length)];
         const invalidLocation = this.objectsCreated.some((obj) => {
@@ -77,6 +77,7 @@ class Spawner {
             return false;
         });
 
+        // if first attempt at generating an unused random location fails, this recursive call will keep trying until a valid one is created
         if (invalidLocation) {
             return this.pickRandomLocation();
         }
@@ -84,6 +85,9 @@ class Spawner {
         return location;
     }
 
+    // triggered when player overlaps actual in-game chest, game scene emits a pickup event, this is heard by game manager which calls this method
+    // filters array of created objects to now only includes objects NOT matching the passed ID. The method for deleting, passed in from the game manager,
+    // is then called to remove the object from the relevant array in the game manager
     removeObject(id) {
         this.objectsCreated = this.objectsCreated.filter(obj => obj.id !== id);
         this.deleteObject(id);

@@ -60,6 +60,7 @@ class GameManager {
     }
 
     setupEventListener() {
+        // hears from game scene that a player picked up a chest
         this.scene.events.on('pickUpChest', (chestId, playerId) => {
             // update the spawner
             if (this.chests[chestId]) {
@@ -69,8 +70,11 @@ class GameManager {
                 this.players[playerId].updateGold(gold);
                 this.scene.events.emit('updateScore', this.players[playerId].gold);
 
-                // removing the chest
+                // removing the chest--the specific chest stored in a specific spawner, all referenced via key, is made to use its removeObject function
+                // which will in turn remove the chest from the spawner's objectsCreated array then run the deleteChest it was passed from the game manager
+                // to remove the chest from the game manager's chests array
                 this.spawners[this.chests[chestId].spawnerId].removeObject(chestId);
+                // game scene is informed that the chest has been removed so that it can now be rendered inactive by the game scene
                 this.scene.events.emit('chestRemoved', chestId);
             }
         });
@@ -179,6 +183,7 @@ class GameManager {
         this.scene.events.emit('chestSpawned', chest);
     }
 
+    // hears that 
     deleteChest(chestId) {
         delete this.chests[chestId];
     }

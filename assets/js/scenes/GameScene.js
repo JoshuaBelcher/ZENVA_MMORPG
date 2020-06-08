@@ -106,6 +106,7 @@ class GameScene extends Phaser.Scene{
             );
             // add monster to monsters group
             this.monsters.add(monster);
+            monster.setCollideWorldBounds(true);
         } else {
             monster.id = monsterObject.id;
             monster.health = monsterObject.health;
@@ -138,6 +139,7 @@ class GameScene extends Phaser.Scene{
         }
     }
 
+    // called when addCollisions detects an overlap of player and chest
     collectChest(player, chest) {
         // play gold pickup sound
         this.goldPickupAudio.play();
@@ -166,6 +168,8 @@ class GameScene extends Phaser.Scene{
             this.spawnMonster(monster);
         });
 
+        // once it hears that chest has been removed from the Game Manager and spawner, the relevant chest is located, by ID,
+        // in the chests group and rendered inactive, storing it for future use
         this.events.on('chestRemoved', (chestId) => {
             this.chests.getChildren().forEach((chest) => {
                 if (chest.id === chestId) {
