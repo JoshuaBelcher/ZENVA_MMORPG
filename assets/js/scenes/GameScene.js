@@ -43,7 +43,8 @@ class GameScene extends Phaser.Scene{
         this.monsterDeathAudio = this.sound.add('enemyDeath', {loop: false, volume: 0.2});
     }
 
-    // generates an instance of the Player Container class in our scene--"PlayerModel" will be the class passed in as argument
+    // generates an instance of the Player Container class in our scene--"PlayerModel" will be the class passed in as playerObject argument
+    // allowing the Player Container to use some of the PlayerModel's properties as its own
     createPlayer(playerObject) {
         this.player = new PlayerContainer(
             this,
@@ -178,6 +179,8 @@ class GameScene extends Phaser.Scene{
             });
         });
 
+        // once it hears that a monster has been removed from the Game Manager and spawner, the relevant monster is located, by ID,
+        // in the monsters group and rendered inactive, storing it for future use
         this.events.on('monsterRemoved', (monsterId) => {
             this.monsters.getChildren().forEach((monster) => {
                 if (monster.id === monsterId) {

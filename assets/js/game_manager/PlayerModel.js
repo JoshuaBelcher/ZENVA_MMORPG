@@ -1,3 +1,4 @@
+// This object is one of multiple "data models," essentially objects used to represent a collection of data that represents a real-world object
 class PlayerModel {
     constructor(spawnLocations) {
         this.health = 10;

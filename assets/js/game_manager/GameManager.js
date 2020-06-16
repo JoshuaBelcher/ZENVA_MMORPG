@@ -170,10 +170,11 @@ class GameManager {
     spawnPlayer() {
         // creates new instance of the PlayerModel class, passing in the array of possible spawn locations
         const player = new PlayerModel(this.playerLocations);
-        // stores the new player into the players object array, keyed to the UUID stored in the player
+        // stores the new player model object into the players object array, keyed to the UUID stored in the player
         this.players[player.id] = player;
         // emits an event that will be picked up by the scene that was passed into the game manager,
-        // along with the player object to be received by the event listener
+        // along with the player model object to be received by the event listener
+        //(to allow the scene to generate a player container with the player model's data)
         this.scene.events.emit('spawnPlayer', player);
     };
 

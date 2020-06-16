@@ -1,3 +1,4 @@
+// this is an enum variable
 const Direction = {
     RIGHT: 'RIGHT',
     LEFT: 'LEFT',
@@ -6,15 +7,17 @@ const Direction = {
 
 }
 
+// this container object encapsulates both the Player.js and the weapon objects (and creates the health bar graphic). 
+// This allows them both to be easily manipulated and referenced together.
 class PlayerContainer extends Phaser.GameObjects.Container {
     constructor(scene, x, y, key, frame, health, maxHealth, id, attackAudio) {
         super(scene, x, y);
         this.scene = scene; // the scene this container will be added to
         this.velocity = 160; // the velocity when moving our player
-        this.currentDirection = Direction.RIGHT;
-        this.playerAttacking = false;
+        this.currentDirection = Direction.RIGHT; // default facing direction
+        this.playerAttacking = false; // does not attack by default
         this.flipX = true;
-        this.swordHit = false;
+        this.swordHit = false; // flag to denote whether the weapon hit the enemy object
         this.health = health;
         this.maxHealth = maxHealth;
         this.id = id;
@@ -32,17 +35,17 @@ class PlayerContainer extends Phaser.GameObjects.Container {
         // have the camera follow the player
         this.scene.cameras.main.startFollow(this);
 
-        // create the player
+        // create the player and place it inside the PlayerModel container
         this.player = new Player(this.scene, 0, 0, key, frame);
         this.add(this.player);
 
-        // create the weapon game object
+        // create the weapon game object and place it inside the PlayerModel container
         this.weapon = this.scene.add.image(40, 0, 'items', 4);
         this.scene.add.existing(this.weapon);
         this.weapon.setScale(1.5);
         this.scene.physics.world.enable(this.weapon);
         this.add(this.weapon);
-        this.weapon.alpha = 0;
+        this.weapon.alpha = 0; // this defaults the weapon to invisible since we only want to see it when swinging
 
         //create the player health bar
         this.createHealthBar();
@@ -98,7 +101,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
         };
 
         if (Phaser.Input.Keyboard.JustDown(cursors.space) && !this.playerAttacking) {
-            this.weapon.alpha = 1;
+            this.weapon.alpha = 1; // makes weapon visible when attacking
             this.playerAttacking = true;
             this.attackAudio.play();
             this.scene.time.delayedCall(150, () => {
