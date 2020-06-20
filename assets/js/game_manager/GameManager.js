@@ -78,13 +78,14 @@ class GameManager {
                 this.scene.events.emit('chestRemoved', chestId);
             }
         });
-    
+        
+        // hears from the game scene that a monster was attacked
         this.scene.events.on('monsterAttacked', (monsterId, playerId) => {
             // update the spawner
             if (this.monsters[monsterId]) {
                 const { gold, attack } = this.monsters[monsterId];
 
-                // subtract health from monster model
+                // subtract health from monster model by calling monster model's loseHealth method
                 this.monsters[monsterId].loseHealth();
 
                 // check the monster's health and if dead, remove that object
@@ -93,7 +94,7 @@ class GameManager {
                     this.players[playerId].updateGold(gold);
                     this.scene.events.emit('updateScore', this.players[playerId].gold);
 
-                    // removing the monster
+                    // removing the monster, while emitting event to be heard by game scene
                     this.spawners[this.monsters[monsterId].spawnerId].removeObject(monsterId);
                     this.scene.events.emit('monsterRemoved', monsterId);
 
@@ -174,7 +175,7 @@ class GameManager {
         this.players[player.id] = player;
         // emits an event that will be picked up by the scene that was passed into the game manager,
         // along with the player model object to be received by the event listener
-        //(to allow the scene to generate a player container with the player model's data)
+        // (to allow the scene to generate a player container with the player model's data)
         this.scene.events.emit('spawnPlayer', player);
     };
 

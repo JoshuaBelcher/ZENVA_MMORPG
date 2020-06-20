@@ -56,6 +56,8 @@ class PlayerContainer extends Phaser.GameObjects.Container {
         this.updateHealthBar();
     }
 
+    // keeps position of the healthbar updated in relation to the player's position by redrawing it with every PlayerContainer update()
+    // also ensures the bar's fill level is proportional to the PlayerContainer's current health
     updateHealthBar() {
         this.healthBar.clear();
         this.healthBar.fillStyle(0xffffff, 1);
@@ -75,14 +77,15 @@ class PlayerContainer extends Phaser.GameObjects.Container {
         this.updateHealthBar();
     }
 
+    // when this is called (prompted by the update() method of the Game Scene), velocity defaults back to zero
     update(cursors) {
         this.body.setVelocity(0);
 
         if (cursors.left.isDown) {
-            this.body.setVelocityX(-this.velocity);
-            this.currentDirection = Direction.LEFT;
-            this.weapon.setPosition(-40, 0);
-            this.player.flipX = false;
+            this.body.setVelocityX(-this.velocity); // velocity increases in relevant direction to the container's velocity property
+            this.currentDirection = Direction.LEFT; // facing direction changes to match velocity and keypress direction
+            this.weapon.setPosition(-40, 0); // weapon position is moved appropriately to match movement direction
+            this.player.flipX = false; // container is not flipped since our player sprite already visibly faces left
         } else if (cursors.right.isDown) {
             this.body.setVelocityX(this.velocity);
             this.currentDirection = Direction.RIGHT;
@@ -100,10 +103,12 @@ class PlayerContainer extends Phaser.GameObjects.Container {
             this.weapon.setPosition(0, 40);
         };
 
+        // ensures player will only attack if the spacebar is pressed AND a previous attack is not still being conducted
         if (Phaser.Input.Keyboard.JustDown(cursors.space) && !this.playerAttacking) {
             this.weapon.alpha = 1; // makes weapon visible when attacking
             this.playerAttacking = true;
             this.attackAudio.play();
+            // gives the attack a set duration during which another attack cannot be initiated
             this.scene.time.delayedCall(150, () => {
                 this.weapon.alpha = 0;
                 this.playerAttacking = false;
@@ -111,6 +116,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
             }, [], this);
         }
 
+        // changes weapon angle to visually represent an attack if player is attacking
         if (this.playerAttacking) {
             if (this.weapon.flipX) {
                 this.weapon.angle -= 10;
@@ -118,6 +124,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
                 this.weapon.angle += 10;
             }
         } else {
+            // adjusts angle of weapon based on the container's direction
             if (this.currentDirection === Direction.DOWN) {
                 this.weapon.setAngle(-270); 
             } else if (this.currentDirection === Direction.UP) {
@@ -125,7 +132,7 @@ class PlayerContainer extends Phaser.GameObjects.Container {
             } else {
                 this.weapon.setAngle(0);
             }
-
+            // flips weapon about the x-axis depending on container's direction
             this.weapon.flipX = false;
             if (this.currentDirection === Direction.LEFT) {
                 this.weapon.flipX = true;

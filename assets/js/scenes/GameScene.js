@@ -27,6 +27,7 @@ class GameScene extends Phaser.Scene{
     }
 
     // automatically called once per game step to update the player container's position based on keyboard input--only if player already exists in scene
+    // it functions by making the player container calls its own internal update() method with the cursor keys passed in
     update() {
         if (this.player) {
             this.player.update(this.cursors)
@@ -133,6 +134,8 @@ class GameScene extends Phaser.Scene{
         this.physics.add.overlap(this.player.weapon, this.monsters, this.enemyOverlap, null, this);
     }
 
+    // called when weapon and enemy overlap. If player is attacking and not currently engaged in a previous hit,
+    // then the monsterAttacked event is emitted
     enemyOverlap(weapon, enemy) {
         if (this.player.playerAttacking && !this.player.swordHit) {
             this.player.swordHit = true;
@@ -154,7 +157,10 @@ class GameScene extends Phaser.Scene{
         this.map = new Map (this, 'map', 'background', 'background', 'blocked');
     }
 
+    // below are the events, emitted by the scene's Game Manager, which the scene will be listening for
     createGameManager() {
+
+        // hears when the Game Manager has spawned a PlayerModel, upon which it passes that model into its createPlayer method
         this.events.on('spawnPlayer', (playerObject) => {
             this.createPlayer(playerObject);
             this.addCollisions();
